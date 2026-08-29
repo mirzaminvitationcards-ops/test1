@@ -609,9 +609,9 @@
             <div class="envelope">
                 <div class="flap"></div>
                 <div class="pocket"></div>
-                <!-- FIXED HEART ICON -->
+                <!-- FIXED HEART ICON: Using Variation Selector-15 (&#xFE0E;) to force text presentation over Apple Emoji -->
                 <div class="wax-seal" id="waxSeal">
-                    <i class="fas fa-heart" style="font-size: 20px; color: white;"></i>
+                    <span style="font-size: 25px; color: white;">&#9829;&#xFE0E;</span>
                 </div>
             </div>
         </div>
@@ -807,9 +807,9 @@
 
         <!-- New Gallery Submenu -->
         <div id="gallerySubMenu" class="location-submenu" style="left: 20%;">
-            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-images"></i> Couple</a>
+            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-image"></i> Couple</a>
             <div class="menu-divider"></div>
-            <a href="javascript:void(0)" onclick="scrollToSection('guest-gallery-section')"><i class="fas fa-camera"></i> Memories</a>
+            <a href="javascript:void(0)" onclick="scrollToSection('guest-gallery-section')"><i class="fas fa-camera-retro"></i> Memories</a>
         </div>
 
         <!-- Main Navigation Icons -->
@@ -960,30 +960,23 @@ to share in our special day…`;
                 screen.style.display = 'none';
                 document.body.style.overflowY = 'auto'; // Allow scrolling now
 
+                // Start the smooth autoscroll exactly as it is structured in the engagement code
                 isAutoScrolling = true;
+                window.addEventListener('wheel', stopAutoScroll, { passive: true });       
+                window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
+                window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
+                window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
+                document.addEventListener('keydown', stopAutoScroll, { passive: true });   
 
-                // Delay the listeners slightly to avoid immediate cancellation from the initial tap
-                setTimeout(() => {
-                    window.addEventListener('wheel', stopAutoScroll, { passive: true });       
-                    window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
-                    window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
-                    window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
-                    document.addEventListener('keydown', stopAutoScroll, { passive: true });   
-                }, 500);
-
-            }, 1000); 
-
-            setTimeout(() => {
                 function autoScroll() {
                     if (isAutoScrolling && (window.innerHeight + Math.ceil(window.scrollY) < document.documentElement.scrollHeight)) {
                         window.scrollBy(0, 1); 
                         autoScrollId = requestAnimationFrame(autoScroll);
                     }
                 }
-                if (isAutoScrolling) {
-                    autoScroll();
-                }
-            }, 1500);
+                autoScroll();
+
+            }, 1000); 
         }
 
         /* --- 3. RSVP & COUNTER LOGIC (FIREBASE CLOUD) --- */
