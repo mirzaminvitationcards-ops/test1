@@ -807,7 +807,7 @@
 
         <!-- New Gallery Submenu -->
         <div id="gallerySubMenu" class="location-submenu" style="left: 20%;">
-            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-images"></i> Couple</a>
+            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-image"></i> Couple</a>
             <div class="menu-divider"></div>
             <a href="javascript:void(0)" onclick="scrollToSection('guest-gallery-section')"><i class="fas fa-camera-retro"></i> Memories</a>
         </div>
@@ -907,16 +907,26 @@
 
         let autoScrollId;
         let isAutoScrolling = false;
+        let touchStartCount = 0; // NEW: Counter for touches
 
         function stopAutoScroll(e) {
-            // Do not stop auto-scroll if the user is just clicking the music button
             if (e && e.target && e.target.closest('[onclick="toggleMusic()"]')) return; 
+
+            // NEW: Require two touches to stop autoscroll
+            if (e && e.type === 'touchstart') {
+                touchStartCount++;
+                if (touchStartCount < 2) return; 
+            } else if (e && e.type === 'touchmove') {
+                if (touchStartCount < 2) return; 
+            }
 
             if (isAutoScrolling) {
                 isAutoScrolling = false;
                 cancelAnimationFrame(autoScrollId);
                 window.removeEventListener('wheel', stopAutoScroll);
                 window.removeEventListener('touchmove', stopAutoScroll);
+                window.removeEventListener('touchstart', stopAutoScroll);
+                window.removeEventListener('mousedown', stopAutoScroll);
                 document.removeEventListener('keydown', stopAutoScroll);
             }
         }
@@ -962,12 +972,14 @@ to share in our special day…`;
                 document.body.style.overflowY = 'auto'; // Allow scrolling now
 
                 isAutoScrolling = true;
+                touchStartCount = 0; // Reset counter
 
                 // Delay the listeners slightly to avoid immediate cancellation from the initial tap
                 setTimeout(() => {
                     window.addEventListener('wheel', stopAutoScroll, { passive: true });       
                     window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
-                    // removed 'touchstart' and 'mousedown' so just touching the screen doesn't kill the scroll
+                    window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
+                    window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
                     document.addEventListener('keydown', stopAutoScroll, { passive: true });   
                 }, 500);
 
