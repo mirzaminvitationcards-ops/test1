@@ -30,7 +30,7 @@
         }
 
         html {
-            scroll-behavior: auto; /* Fixed: Allows frame-by-frame auto-scroll without lag */
+            scroll-behavior: auto;
         }
 
         body {
@@ -900,7 +900,6 @@
         const waxSeal = document.getElementById('waxSeal');
         const envelopeWrapper = document.getElementById('envelopeWrapper');
 
-        // Opening the envelope does NOT trigger auto-scroll
         waxSeal.addEventListener('click', (e) => {
             e.stopPropagation();
             envelopeWrapper.classList.add('open');
@@ -908,18 +907,9 @@
 
         let autoScrollId;
         let isAutoScrolling = false;
-        let touchStartCount = 0; // Tracks touches specifically to require 3 taps
 
         function stopAutoScroll(e) {
             if (e && e.target && e.target.closest('[onclick="toggleMusic()"]')) return; 
-
-            // Strict check: Require 3 touches to stop
-            if (e && e.type === 'touchstart') {
-                touchStartCount++;
-                if (touchStartCount < 3) return; 
-            } else if (e && e.type === 'touchmove') {
-                if (touchStartCount < 3) return; 
-            }
 
             if (isAutoScrolling) {
                 isAutoScrolling = false;
@@ -932,16 +922,14 @@
             }
         }
 
-        // TRIGGER AUTO-SCROLL EXCLUSIVELY FROM THE INVITATION CARD "OPEN" BUTTON
         function trackOpenClick(e) {
             e.preventDefault();
-            e.stopPropagation();
 
             const guestName = localStorage.getItem('wedding_guest_name') || "Unknown Guest";
             const btn = e.target;
             btn.innerText = "Opening..."; 
 
-            // Play music immediately
+            // Play music immediately upon click
             weddingAudio.play().then(() => {
                 updateMusicUI();
             }).catch(e => console.log("Audio playback failed:", e));
@@ -968,14 +956,9 @@ to share in our special day…`;
             const screen = document.getElementById('envelope-screen');
             screen.style.opacity = '0';
 
+            // Safe delay before enabling touch-stop listeners so the initial "Open" tap doesn't kill the scroll
             setTimeout(() => {
-                screen.style.display = 'none';
-                document.body.style.overflowY = 'auto'; // Enable vertical scrolling
-
                 isAutoScrolling = true;
-                touchStartCount = 0; // Reset touch counter
-
-                // Add the cancel listeners
                 window.addEventListener('wheel', stopAutoScroll, { passive: true });       
                 window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
                 window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
@@ -989,7 +972,11 @@ to share in our special day…`;
                     }
                 }
                 autoScroll();
+            }, 500);
 
+            setTimeout(() => {
+                screen.style.display = 'none';
+                document.body.style.overflowY = 'auto'; // Allow scrolling now
             }, 1000); 
         }
 
