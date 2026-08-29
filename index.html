@@ -912,12 +912,12 @@
         function stopAutoScroll(e) {
             if (e && e.target && e.target.closest('[onclick="toggleMusic()"]')) return; 
 
-            // NEW: Require two touches to stop autoscroll
+            // Require THREE touches to stop autoscroll on mobile
             if (e && e.type === 'touchstart') {
                 touchStartCount++;
-                if (touchStartCount < 2) return; 
+                if (touchStartCount < 3) return; 
             } else if (e && e.type === 'touchmove') {
-                if (touchStartCount < 2) return; 
+                if (touchStartCount < 3) return; 
             }
 
             if (isAutoScrolling) {
