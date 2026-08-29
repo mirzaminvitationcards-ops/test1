@@ -30,7 +30,7 @@
         }
 
         html {
-            scroll-behavior: smooth;
+            scroll-behavior: auto; /* Fixed: Allows frame-by-frame auto-scroll without lag */
         }
 
         body {
@@ -609,7 +609,7 @@
             <div class="envelope">
                 <div class="flap"></div>
                 <div class="pocket"></div>
-                <!-- FIXED HEART ICON: Using Variation Selector-15 (&#xFE0E;) and -webkit-text-fill-color to force text presentation over Apple Emoji -->
+                <!-- FIXED WHITE HEART FOR ALL DEVICES -->
                 <div class="wax-seal" id="waxSeal">
                     <span style="font-size: 25px; color: white; -webkit-text-fill-color: white;">&#9829;&#xFE0E;</span>
                 </div>
@@ -807,9 +807,9 @@
 
         <!-- New Gallery Submenu -->
         <div id="gallerySubMenu" class="location-submenu" style="left: 20%;">
-            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-image"></i> Couple</a>
+            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-images"></i> Couple</a>
             <div class="menu-divider"></div>
-            <a href="javascript:void(0)" onclick="scrollToSection('guest-gallery-section')"><i class="fas fa-camera-retro"></i> Memories</a>
+            <a href="javascript:void(0)" onclick="scrollToSection('guest-gallery-section')"><i class="fas fa-camera"></i> Memories</a>
         </div>
 
         <!-- Main Navigation Icons -->
@@ -900,6 +900,7 @@
         const waxSeal = document.getElementById('waxSeal');
         const envelopeWrapper = document.getElementById('envelopeWrapper');
 
+        // Opening the envelope does NOT trigger auto-scroll
         waxSeal.addEventListener('click', (e) => {
             e.stopPropagation();
             envelopeWrapper.classList.add('open');
@@ -907,12 +908,12 @@
 
         let autoScrollId;
         let isAutoScrolling = false;
-        let touchStartCount = 0; // NEW: Counter for touches
+        let touchStartCount = 0; // Tracks touches specifically to require 3 taps
 
         function stopAutoScroll(e) {
             if (e && e.target && e.target.closest('[onclick="toggleMusic()"]')) return; 
 
-            // Require THREE touches to stop autoscroll on mobile
+            // Strict check: Require 3 touches to stop
             if (e && e.type === 'touchstart') {
                 touchStartCount++;
                 if (touchStartCount < 3) return; 
@@ -931,15 +932,16 @@
             }
         }
 
+        // TRIGGER AUTO-SCROLL EXCLUSIVELY FROM THE INVITATION CARD "OPEN" BUTTON
         function trackOpenClick(e) {
             e.preventDefault();
-            e.stopPropagation(); // Prevent any ghost clicks bubbling up
+            e.stopPropagation();
 
             const guestName = localStorage.getItem('wedding_guest_name') || "Unknown Guest";
             const btn = e.target;
             btn.innerText = "Opening..."; 
 
-            // Play music immediately upon click
+            // Play music immediately
             weddingAudio.play().then(() => {
                 updateMusicUI();
             }).catch(e => console.log("Audio playback failed:", e));
@@ -968,35 +970,27 @@ to share in our special day…`;
 
             setTimeout(() => {
                 screen.style.display = 'none';
-                document.documentElement.style.overflowY = 'auto'; // Ensure document can scroll
-                document.body.style.overflowY = 'auto'; // Allow scrolling now
+                document.body.style.overflowY = 'auto'; // Enable vertical scrolling
 
                 isAutoScrolling = true;
-                touchStartCount = 0; // Reset counter
+                touchStartCount = 0; // Reset touch counter
 
-                // Delay the listeners slightly to avoid immediate cancellation from the initial tap
-                setTimeout(() => {
-                    window.addEventListener('wheel', stopAutoScroll, { passive: true });       
-                    window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
-                    window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
-                    window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
-                    document.addEventListener('keydown', stopAutoScroll, { passive: true });   
-                }, 500);
+                // Add the cancel listeners
+                window.addEventListener('wheel', stopAutoScroll, { passive: true });       
+                window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
+                window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
+                window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
+                document.addEventListener('keydown', stopAutoScroll, { passive: true });   
 
-            }, 1000); 
-
-            setTimeout(() => {
                 function autoScroll() {
-                    // Use Math.ceil to avoid fractional pixel issues on mobile
                     if (isAutoScrolling && (window.innerHeight + Math.ceil(window.scrollY) < document.documentElement.scrollHeight - 5)) {
                         window.scrollBy(0, 1); 
                         autoScrollId = requestAnimationFrame(autoScroll);
                     }
                 }
-                if (isAutoScrolling) {
-                    autoScroll();
-                }
-            }, 1500);
+                autoScroll();
+
+            }, 1000); 
         }
 
         /* --- 3. RSVP & COUNTER LOGIC (FIREBASE CLOUD) --- */
