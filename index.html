@@ -609,9 +609,9 @@
             <div class="envelope">
                 <div class="flap"></div>
                 <div class="pocket"></div>
-                <!-- FIXED HEART ICON: Using Variation Selector-15 (&#xFE0E;) to force text presentation over Apple Emoji -->
+                <!-- FIXED HEART ICON: Using Variation Selector-15 (&#xFE0E;) and -webkit-text-fill-color to force text presentation over Apple Emoji -->
                 <div class="wax-seal" id="waxSeal">
-                    <span style="font-size: 25px; color: white;">&#9829;&#xFE0E;</span>
+                    <span style="font-size: 25px; color: white; -webkit-text-fill-color: white;">&#9829;&#xFE0E;</span>
                 </div>
             </div>
         </div>
@@ -807,7 +807,7 @@
 
         <!-- New Gallery Submenu -->
         <div id="gallerySubMenu" class="location-submenu" style="left: 20%;">
-            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-image"></i> Couple</a>
+            <a href="javascript:void(0)" onclick="scrollToSection('gallery-section')"><i class="far fa-images"></i> Couple</a>
             <div class="menu-divider"></div>
             <a href="javascript:void(0)" onclick="scrollToSection('guest-gallery-section')"><i class="fas fa-camera-retro"></i> Memories</a>
         </div>
@@ -909,6 +909,7 @@
         let isAutoScrolling = false;
 
         function stopAutoScroll(e) {
+            // Do not stop auto-scroll if the user is just clicking the music button
             if (e && e.target && e.target.closest('[onclick="toggleMusic()"]')) return; 
 
             if (isAutoScrolling) {
@@ -916,14 +917,13 @@
                 cancelAnimationFrame(autoScrollId);
                 window.removeEventListener('wheel', stopAutoScroll);
                 window.removeEventListener('touchmove', stopAutoScroll);
-                window.removeEventListener('mousedown', stopAutoScroll);
-                window.removeEventListener('touchstart', stopAutoScroll); 
                 document.removeEventListener('keydown', stopAutoScroll);
             }
         }
 
         function trackOpenClick(e) {
             e.preventDefault();
+            e.stopPropagation(); // Prevent any ghost clicks bubbling up
 
             const guestName = localStorage.getItem('wedding_guest_name') || "Unknown Guest";
             const btn = e.target;
@@ -958,25 +958,33 @@ to share in our special day…`;
 
             setTimeout(() => {
                 screen.style.display = 'none';
+                document.documentElement.style.overflowY = 'auto'; // Ensure document can scroll
                 document.body.style.overflowY = 'auto'; // Allow scrolling now
 
-                // Start the smooth autoscroll exactly as it is structured in the engagement code
                 isAutoScrolling = true;
-                window.addEventListener('wheel', stopAutoScroll, { passive: true });       
-                window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
-                window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
-                window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
-                document.addEventListener('keydown', stopAutoScroll, { passive: true });   
 
+                // Delay the listeners slightly to avoid immediate cancellation from the initial tap
+                setTimeout(() => {
+                    window.addEventListener('wheel', stopAutoScroll, { passive: true });       
+                    window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
+                    // removed 'touchstart' and 'mousedown' so just touching the screen doesn't kill the scroll
+                    document.addEventListener('keydown', stopAutoScroll, { passive: true });   
+                }, 500);
+
+            }, 1000); 
+
+            setTimeout(() => {
                 function autoScroll() {
-                    if (isAutoScrolling && (window.innerHeight + Math.ceil(window.scrollY) < document.documentElement.scrollHeight)) {
+                    // Use Math.ceil to avoid fractional pixel issues on mobile
+                    if (isAutoScrolling && (window.innerHeight + Math.ceil(window.scrollY) < document.documentElement.scrollHeight - 5)) {
                         window.scrollBy(0, 1); 
                         autoScrollId = requestAnimationFrame(autoScroll);
                     }
                 }
-                autoScroll();
-
-            }, 1000); 
+                if (isAutoScrolling) {
+                    autoScroll();
+                }
+            }, 1500);
         }
 
         /* --- 3. RSVP & COUNTER LOGIC (FIREBASE CLOUD) --- */
