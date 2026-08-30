@@ -31,6 +31,7 @@
 
         html {
             scroll-behavior: auto;
+            overflow-y: scroll; /* Forces scrollbar gutter to stay visible, fixing screen shift */
         }
 
         body {
@@ -634,7 +635,7 @@
         <button class="lightbox-nav" id="lightbox-next" onclick="changeSlide(1)">&#10095;</button>
     </div>
 
-    <!-- =========================================
+    <!-- ==========================================
          1. THE FULL SCREEN ENVELOPE OVERLAY 
          ========================================== -->
     <div id="envelope-screen">
