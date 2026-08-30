@@ -421,12 +421,44 @@
             font-size: 24px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            cursor: pointer; /* Indicates photos can be clicked */
         }
-        .guest-photo-item img, .guest-photo-item video {
+        .guest-photo-item img {
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
             border-radius: 10px;
+        }
+
+        /* FULLSCREEN MODAL FOR GUEST MEMORIES */
+        #lightbox-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 30000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        #lightbox-modal img {
+            max-width: 90%;
+            max-height: 90vh;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            object-fit: contain;
+        }
+        #lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 35px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
         }
 
         .delete-media-btn {
@@ -576,6 +608,12 @@
 </head>
 <body>
 
+    <!-- FULLSCREEN LIGHTBOX FOR GUEST MEMORIES -->
+    <div id="lightbox-modal" onclick="closeLightbox()">
+        <span id="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" alt="Fullscreen View">
+    </div>
+
     <!-- ==========================================
          1. THE FULL SCREEN ENVELOPE OVERLAY 
          ========================================== -->
@@ -609,7 +647,6 @@
             <div class="envelope">
                 <div class="flap"></div>
                 <div class="pocket"></div>
-                <!-- FIXED WHITE HEART FOR ALL DEVICES -->
                 <div class="wax-seal" id="waxSeal">
                     <span style="font-size: 25px; color: white; -webkit-text-fill-color: white;">&#9829;&#xFE0E;</span>
                 </div>
@@ -718,19 +755,20 @@
             </div>
         </div>
 
-        <!-- NEW: GUEST PHOTO/VIDEO GALLERY SECTION -->
+        <!-- NEW: GUEST PHOTO-ONLY GALLERY SECTION -->
         <div class="guest-gallery-section" id="guest-gallery-section" style="margin-top: 50px;">
             <div class="mini-blue-line"></div>
             <h3 class="gallery-title">GUEST MEMORIES</h3>
-            <p class="announcement">Share your favorite photos or videos with us</p>
+            <p class="announcement">Share your favorite photos with us</p>
 
-            <input type="file" id="photo-upload-input" accept="image/*,video/*" style="display: none;">
+            <!-- ACCEPT ONLY IMAGE FILES -->
+            <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
             <button class="upload-btn" id="upload-photo-btn">
                 <i class="fas fa-camera-retro" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
-                SHARE A MEMORY
+                SHARE A PHOTO
             </button>
             <div class="guest-photo-grid" id="guest-photo-grid">
-                <!-- Dynamically populated media -->
+                <!-- Dynamically populated photos -->
             </div>
         </div>
 
@@ -858,6 +896,18 @@
             setTimeout(() => { overlay.style.display = 'none'; }, 500);
         }
 
+        /* --- LIGHTBOX FULLSCREEN LOGIC FOR GUEST MEMORIES --- */
+        function openLightbox(imgSrc) {
+            const modal = document.getElementById('lightbox-modal');
+            const modalImg = document.getElementById('lightbox-img');
+            modalImg.src = imgSrc;
+            modal.style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-modal').style.display = 'none';
+        }
+
         /* --- FIREBASE INITIALIZATION --- */
         const firebaseConfig = {
             apiKey: "AIzaSyCB5tx5ffwZENpTqU9otGTvxjmlgqyjwQ",
@@ -956,28 +1006,32 @@ to share in our special day…`;
             const screen = document.getElementById('envelope-screen');
             screen.style.opacity = '0';
 
-            // Safe delay before enabling touch-stop listeners so the initial "Open" tap doesn't kill the scroll
             setTimeout(() => {
-                isAutoScrolling = true;
-                window.addEventListener('wheel', stopAutoScroll, { passive: true });       
-                window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
-                window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
-                window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
-                document.addEventListener('keydown', stopAutoScroll, { passive: true });   
+                screen.style.display = 'none';
+                document.body.style.overflowY = 'auto'; // Allow scrolling now
 
+                // Setup the listeners to interrupt scrolling (1-touch stop with a safety buffer)
+                isAutoScrolling = true;
+                setTimeout(() => {
+                    window.addEventListener('wheel', stopAutoScroll, { passive: true });       
+                    window.addEventListener('touchmove', stopAutoScroll, { passive: true });   
+                    window.addEventListener('touchstart', stopAutoScroll, { passive: true }); 
+                    window.addEventListener('mousedown', stopAutoScroll, { passive: true });   
+                    document.addEventListener('keydown', stopAutoScroll, { passive: true });   
+                }, 300);
+            }, 1000); 
+
+            setTimeout(() => {
                 function autoScroll() {
-                    if (isAutoScrolling && (window.innerHeight + Math.ceil(window.scrollY) < document.documentElement.scrollHeight - 5)) {
+                    if (isAutoScrolling && (window.innerHeight + Math.ceil(window.scrollY) < document.documentElement.scrollHeight)) {
                         window.scrollBy(0, 1); 
                         autoScrollId = requestAnimationFrame(autoScroll);
                     }
                 }
-                autoScroll();
-            }, 500);
-
-            setTimeout(() => {
-                screen.style.display = 'none';
-                document.body.style.overflowY = 'auto'; // Allow scrolling now
-            }, 1000); 
+                if (isAutoScrolling) {
+                    autoScroll();
+                }
+            }, 1500);
         }
 
         /* --- 3. RSVP & COUNTER LOGIC (FIREBASE CLOUD) --- */
@@ -1173,7 +1227,7 @@ to share in our special day…`;
             });
         }
 
-        /* ================= PHOTO & VIDEO UPLOAD LOGIC ================= */
+        /* ================= PHOTO-ONLY UPLOAD LOGIC ================= */
         const photoInput = document.getElementById('photo-upload-input');
         const uploadBtn = document.getElementById('upload-photo-btn');
         const photoGrid = document.getElementById('guest-photo-grid');
@@ -1182,7 +1236,6 @@ to share in our special day…`;
         uploadBtn.addEventListener('click', () => {
             const isAdmin = localStorage.getItem('is_wedding_admin') === 'true';
 
-            // Admins bypass both the total venue limits and personal limits
             if (!isAdmin) {
                 if (totalPhotoCount >= MAX_TOTAL_PHOTOS) {
                     alert(`The gallery is full (${MAX_TOTAL_PHOTOS} memories maximum).`);
@@ -1201,9 +1254,9 @@ to share in our special day…`;
             const file = e.target.files[0];
             if (!file) return;
 
-            const isVideo = file.type.startsWith('video/');
-            if (isVideo && file.size > 15 * 1024 * 1024) {
-                alert("Video is too large! Please choose a short clip under 15MB.");
+            // Restrict uploads to images only
+            if (!file.type.startsWith('image/')) {
+                alert("Only photo uploads are allowed!");
                 photoInput.value = '';
                 return;
             }
@@ -1211,12 +1264,8 @@ to share in our special day…`;
             uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px; display: block;"></i> UPLOADING...';
 
             try {
-                let fileToUpload = file;
-                let fileName = isVideo ? 'video.mp4' : 'photo.webp';
-
-                if (!isVideo) {
-                    fileToUpload = await compressImage(file, 800, 0.6);
-                }
+                let fileToUpload = await compressImage(file, 800, 0.6);
+                let fileName = 'photo.webp';
 
                 const formData = new FormData();
                 formData.append('file', fileToUpload, fileName);
@@ -1232,7 +1281,7 @@ to share in our special day…`;
 
                 await db.collection("test_photos").add({
                     url: cloudinaryData.secure_url,
-                    type: isVideo ? 'video' : 'image',
+                    type: 'image',
                     ownerId: myUserId,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -1241,7 +1290,7 @@ to share in our special day…`;
                 alert("Failed to upload. Please try again.");
             } finally {
                 photoInput.value = ''; 
-                uploadBtn.innerHTML = '<i class="fas fa-camera-retro" style="font-size: 24px; margin-bottom: 10px; display: block;"></i> SHARE A MEMORY';
+                uploadBtn.innerHTML = '<i class="fas fa-camera-retro" style="font-size: 24px; margin-bottom: 10px; display: block;"></i> SHARE A PHOTO';
             }
         });
 
@@ -1257,22 +1306,17 @@ to share in our special day…`;
 
                 const item = document.createElement('div');
                 item.className = 'guest-photo-item';
+                // Clicking opens the fullscreen lightbox view
+                item.setAttribute('onclick', `openLightbox('${data.url}')`);
 
                 let deleteHTML = '';
                 if (isAdmin || data.ownerId === myUserId) {
-                  deleteHTML = `<button class="delete-media-btn" onclick="deleteItem('test_photos', '${doc.id}')">Delete</button>`;
-                }
-
-                let mediaHTML = '';
-                if (data.type === 'video') {
-                    mediaHTML = `<video src="${data.url}" controls playsinline></video>`;
-                } else {
-                    mediaHTML = `<img src="${data.url}" alt="Guest Memory">`;
+                  deleteHTML = `<button class="delete-media-btn" onclick="event.stopPropagation(); deleteItem('test_photos', '${doc.id}')">Delete</button>`;
                 }
 
                 item.innerHTML = `
                     ${deleteHTML}
-                    ${mediaHTML}
+                    <img src="${data.url}" alt="Guest Memory">
                 `;
                 photoGrid.appendChild(item);
             });
@@ -1295,7 +1339,6 @@ to share in our special day…`;
             const isAdmin = localStorage.getItem('is_wedding_admin') === 'true';
 
             if (!isRecording) {
-                // Admins bypass both the total venue limits and personal limits
                 if (!isAdmin) {
                     if (totalVoiceCount >= MAX_TOTAL_VOICES) {
                         alert(`The voice message inbox is full (${MAX_TOTAL_VOICES} messages maximum).`);
